@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# dotenv environment variables file
+.env
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# SQLite
+*.sqlite3
+*.db
+
+# Misc
+*.swp
+*~
