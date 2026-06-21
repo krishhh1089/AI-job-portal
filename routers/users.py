@@ -1,19 +1,23 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from database import get_db
+from models import db_models
 from models.schemas import UserCreate
 
 router = APIRouter()
 
-users_db: list[dict] = []
-
 @router.post("/register", status_code=201)
-def register(user: UserCreate):
-    exists = any(u["email"] == user.email for u in users_db)
-    if exists:
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    existing = db.query(db_models.User).filter(db_models.User.email == user.email).first()
+    if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    new_user = {"id": len(users_db) + 1, **user.model_dump()}
-    users_db.append(new_user)
-    return {"message": "User registered", "id": new_user["id"]}
+    new_user = db_models.User(**user.model_dump())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "User registered", "id": new_user.id}
 
 @router.get("/")
-def list_users():
-    return [{"id": u["id"], "name": u["name"], "email": u["email"]} for u in users_db]
+def list_users(db: Session = Depends(get_db)):
+    users = db.query(db_models.User).all()
+    return [{"id": u.id, "name": u.name, "email": u.email, "role": u.role} for u in users]

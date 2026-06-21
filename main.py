@@ -1,5 +1,10 @@
 from fastapi import FastAPI
+from database import engine, Base
+from models import db_models
 from routers import jobs, users
+
+# Create all tables on startup
+db_models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="AI Job Portal",
@@ -12,4 +17,4 @@ app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
 
 @app.get("/")
 def root():
-    return {"message": "AI Job Portal API is running"}
+    return {"message": "AI Job Portal API is running 🚀"}
