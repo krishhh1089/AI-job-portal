@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 
-from app.models.db_models import User
+from app.models.user import User
+
+from uuid import UUID
 
 
 class UserRepository:
@@ -9,7 +11,8 @@ class UserRepository:
     def get_by_email(
         db: Session,
         email: str
-    ):
+    ) -> User | None:
+
         return (
             db.query(User)
             .filter(User.email == email)
@@ -17,10 +20,43 @@ class UserRepository:
         )
 
     @staticmethod
-    def create(
+    def get_by_id(
+        db: Session,
+        user_id: UUID
+    ) -> User | None:
+
+        return (
+            db.query(User)
+            .filter(User.user_id == user_id)
+            .first()
+        )
+    
+    @staticmethod
+    def update(
+        db: Session,
+        user: User
+    ) -> User:
+
+        db.commit()
+        db.refresh(user)
+
+        return user
+    
+    @staticmethod
+    def delete(
         db: Session,
         user: User
     ):
+
+        db.delete(user)
+        db.commit()
+    
+    @staticmethod
+    def create(
+        db: Session,
+        user: User
+    ) -> User:
+
         db.add(user)
         db.commit()
         db.refresh(user)
