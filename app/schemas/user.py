@@ -1,32 +1,54 @@
+# app/schemas/user.py
+
 from uuid import UUID
 from datetime import datetime
-from pydantic import Field
 
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr
 
-
-class UserBase(BaseModel):
-    first_name: str
-    last_name: str
-    email: EmailStr
+from app.models.user import UserRole
 
 
-class UserCreate(UserBase):
-    password: str = Field(min_length=8, max_length=128)
+# =====================================
+# USER RESPONSE
+# =====================================
 
-
-class UserUpdate(BaseModel):
-    first_name: str | None = None
-    last_name: str | None = None
-    profile_picture: str | None = None
-
-
-class UserRead(UserBase):
+class UserResponse(BaseModel):
     user_id: UUID
-    role: str
-    profile_picture: str | None = None
+    email: EmailStr
+    role: UserRole
+    is_active: bool
+    is_verified: bool
     created_at: datetime
+    updated_at: datetime
 
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    class Config:
+        from_attributes = True
+
+
+# =====================================
+# USER UPDATE
+# normal user can update only email
+# =====================================
+
+class UpdateUserRequest(BaseModel):
+    email: EmailStr | None = None
+
+
+# =====================================
+# ADMIN USER UPDATE
+# admin can activate/deactivate user
+# =====================================
+
+class AdminUpdateUserRequest(BaseModel):
+    email: EmailStr | None = None
+    is_active: bool | None = None
+    role: UserRole | None = None
+
+
+# =====================================
+# USER LIST RESPONSE
+# =====================================
+
+class UserListResponse(BaseModel):
+    users: list[UserResponse]
+    total: int
