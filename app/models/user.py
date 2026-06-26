@@ -118,14 +118,14 @@ class User(Base, TimestampMixin):
     # RECRUITER COMPANY
     # ------------------------------------------------------
 
-    # company_id = Column(
-    #     UUID(as_uuid=True),
-    #     ForeignKey(
-    #         "companies.company_id",
-    #         ondelete="SET NULL"
-    #     ),
-    #     nullable=True
-    # )
+    company_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "companies.company_id",
+            ondelete="SET NULL"
+        ),
+        nullable=True
+    )
 
     # ------------------------------------------------------
     # RELATIONSHIPS
@@ -186,10 +186,10 @@ class User(Base, TimestampMixin):
     #     cascade="all, delete-orphan"
     # )
 
-    # company = relationship(
-    #     "Company",
-    #     back_populates="recruiters"
-    # )
+    company = relationship(
+        "Company",
+        back_populates="recruiters"
+    )
 
     # ------------------------------------------------------
     # STRING REPRESENTATION
