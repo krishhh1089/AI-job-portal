@@ -195,8 +195,14 @@ class Job(Base, TimestampMixin):
     )
 
     recruiter = relationship(
-    "User",
-    back_populates="jobs"
+        "User",
+        back_populates="jobs"
+    )
+
+    job_skills = relationship(
+        "JobSkill",
+        back_populates="job",
+        cascade="all, delete-orphan"
     )
 
     # applications will be added later

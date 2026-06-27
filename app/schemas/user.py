@@ -6,20 +6,19 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr
 
 from app.models.user import UserRole
+from app.schemas.base import TimestampResponse
 
 
 # =====================================
 # USER RESPONSE
 # =====================================
 
-class UserResponse(BaseModel):
+class UserResponse(TimestampResponse):
     user_id: UUID
     email: EmailStr
     role: UserRole
     is_active: bool
     is_verified: bool
-    created_at: datetime
-    updated_at: datetime
 
     class Config:
         from_attributes = True

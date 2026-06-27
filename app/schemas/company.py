@@ -7,6 +7,7 @@ from app.models.company import (
     Industry,
     CompanySize
 )
+from app.schemas.base import TimestampResponse
 
 
 # ==========================================================
@@ -59,7 +60,7 @@ class UpdateCompanyRequest(BaseModel):
 # COMPANY RESPONSE
 # ==========================================================
 
-class CompanyResponse(BaseModel):
+class CompanyResponse(TimestampResponse):
 
     company_id: UUID
 
@@ -78,10 +79,6 @@ class CompanyResponse(BaseModel):
     founded_year: int | None
 
     logo_url: HttpUrl | None
-
-    created_at: datetime
-
-    updated_at: datetime
 
     class Config:
         from_attributes = True

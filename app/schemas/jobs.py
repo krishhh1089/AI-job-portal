@@ -7,6 +7,7 @@ from app.models.jobs import (
     JobType,
     JobStatus
 )
+from app.schemas.base import TimestampResponse
 
 
 # ==========================================================
@@ -86,7 +87,7 @@ class UpdateJobRequest(BaseModel):
 # JOB RESPONSE
 # ==========================================================
 
-class JobResponse(BaseModel):
+class JobResponse(TimestampResponse):
 
     job_id: UUID
 
@@ -121,10 +122,6 @@ class JobResponse(BaseModel):
     experience_max: int | None
 
     application_deadline: date | None
-
-    created_at: datetime
-
-    updated_at: datetime
 
     class Config:
         from_attributes = True

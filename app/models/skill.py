@@ -66,7 +66,11 @@ class Skill(Base, TimestampMixin):
     # ------------------------------------------------------
     # RELATIONSHIPS
     # ------------------------------------------------------
-
+    job_skills = relationship(
+        "JobSkill",
+        back_populates="skill",
+        cascade="all, delete-orphan"
+    )
     # Will be added later
 
     # user_skills
