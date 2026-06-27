@@ -118,11 +118,11 @@ class Company(Base, TimestampMixin):
         back_populates="company"
     )
 
-    # jobs = relationship(
-    #     "Job",
-    #     back_populates="company",
-    #     cascade="all, delete-orphan"
-    # )
+    jobs = relationship(
+        "Job",
+        back_populates="company",
+        cascade="all, delete-orphan"
+    )
 
     # ------------------------------------------------------
     # STRING REPRESENTATION

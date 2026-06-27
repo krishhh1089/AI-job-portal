@@ -191,6 +191,10 @@ class User(Base, TimestampMixin):
         back_populates="recruiters"
     )
 
+    jobs = relationship(
+    "Job",
+    back_populates="recruiter"
+   )
     # ------------------------------------------------------
     # STRING REPRESENTATION
     # ------------------------------------------------------
