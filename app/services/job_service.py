@@ -1,5 +1,3 @@
-# app/services/job_service.py
-
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -17,10 +15,6 @@ from app.schemas.jobs import CreateJobRequest, UpdateJobRequest
 
 class JobService:
 
-    # =====================================
-    # CREATE
-    # =====================================
-
     @staticmethod
     def create_job(
         db: Session,
@@ -35,10 +29,7 @@ class JobService:
             raise ValueError("Recruiter is not assigned to a company.")
 
         for skill_id in job_data.skill_ids:
-            skill = skill_repository.get_by_id(
-                db,
-                skill_id
-            )
+            skill = skill_repository.get_by_id(db, skill_id)
 
             if skill is None:
                 raise ValueError("Invalid skill id.")
@@ -52,11 +43,8 @@ class JobService:
             company_id=recruiter.company_id,
             posted_by=recruiter.user_id
         )
-        
-        job = job_repository.create(
-            db,
-            job
-        )
+
+        job = job_repository.create(db, job)
 
         for skill_id in job_data.skill_ids:
             job_skill = JobSkill(
@@ -64,16 +52,9 @@ class JobService:
                 skill_id=skill_id
             )
 
-            job_skill_repository.create(
-                db,
-                job_skill
-            )
+            job_skill_repository.create(db, job_skill)
 
         return job
-
-    # =====================================
-    # READ
-    # =====================================
 
     @staticmethod
     def get_job_by_id(
@@ -81,10 +62,7 @@ class JobService:
         job_id: UUID
     ) -> Job | None:
 
-        return job_repository.get_by_id(
-            db,
-            job_id
-        )
+        return job_repository.get_by_id(db, job_id)
 
     @staticmethod
     def get_all_jobs(
@@ -93,15 +71,7 @@ class JobService:
         limit: int = 100
     ) -> list[Job]:
 
-        return job_repository.get_all(
-            db,
-            skip,
-            limit
-        )
-
-    # =====================================
-    # UPDATE
-    # =====================================
+        return job_repository.get_all(db, skip, limit)
 
     @staticmethod
     def update_job(
@@ -111,10 +81,7 @@ class JobService:
         recruiter: User
     ) -> Job:
 
-        job = job_repository.get_by_id(
-            db,
-            job_id
-        )
+        job = job_repository.get_by_id(db, job_id)
 
         if job is None:
             raise ValueError("Job not found.")
@@ -135,24 +102,14 @@ class JobService:
         )
 
         for field, value in update_data.items():
-            setattr(
-                job,
-                field,
-                value
-            )
+            setattr(job, field, value)
 
-        job = job_repository.update(
-            db,
-            job
-        )
+        job = job_repository.update(db, job)
 
         if skill_ids is not None:
 
             for skill_id in skill_ids:
-                skill = skill_repository.get_by_id(
-                    db,
-                    skill_id
-                )
+                skill = skill_repository.get_by_id(db, skill_id)
 
                 if skill is None:
                     raise ValueError("Invalid skill id.")
@@ -168,9 +125,26 @@ class JobService:
                     skill_id=skill_id
                 )
 
-                job_skill_repository.create(
-                    db,
-                    job_skill
-                )
+                job_skill_repository.create(db, job_skill)
 
         return job
+
+    @staticmethod
+    def delete_job(
+        db: Session,
+        job_id: UUID,
+        recruiter: User
+    ) -> None:
+
+        job = job_repository.get_by_id(db, job_id)
+
+        if job is None:
+            raise ValueError("Job not found.")
+
+        if recruiter.role != UserRole.RECRUITER:
+            raise ValueError("Only recruiters can delete jobs.")
+
+        if job.company_id != recruiter.company_id:
+            raise ValueError("You can delete only your company's jobs.")
+
+        job_repository.delete(db, job)
