@@ -10,6 +10,8 @@ from app.schemas.auth import (
     TokenResponse
 )
 
+from fastapi.security import OAuth2PasswordRequestForm
+
 from app.schemas.user import UserResponse
 from app.services.auth_service import AuthService
 from app.models.user import User
@@ -48,17 +50,23 @@ def register(
     response_model=TokenResponse
 )
 def login(
-    login_data: LoginRequest,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
     try:
+        login_data = LoginRequest(
+            email=form_data.username,
+            password=form_data.password
+        )
+
         access_token = AuthService.login(
             db,
             login_data
         )
 
         return TokenResponse(
-            access_token=access_token
+            access_token=access_token,
+            token_type="bearer"
         )
 
     except ValueError as e:
@@ -66,7 +74,6 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e)
         )
-
 
 @router.get(
     "/me",

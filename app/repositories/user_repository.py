@@ -1,6 +1,6 @@
 # app/repositories/user_repository.py
 
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -175,7 +175,7 @@ class UserRepository:
         user: User
     ) -> User:
         try:
-            user.last_login = datetime.now(UTC)
+            user.last_login = datetime.now(timezone.utc)
 
             db.commit()
             db.refresh(user)
