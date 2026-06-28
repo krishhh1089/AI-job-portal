@@ -67,9 +67,16 @@ class CompanyService:
         # ---------------------------------
         # Create company object
         # ---------------------------------
+        company_dict = company_data.model_dump()
+
+        if company_dict.get("website") is not None:
+            company_dict["website"] = str(company_dict["website"])
+
+        if company_dict.get("logo_url") is not None:
+            company_dict["logo_url"] = str(company_dict["logo_url"])
 
         company = Company(
-            **company_data.model_dump()
+            **company_dict
         )
 
         company = company_repository.create(
@@ -132,18 +139,24 @@ class CompanyService:
             exclude_unset=True
         )
 
+        # Convert HttpUrl to string
+        if "website" in update_data and update_data["website"] is not None:
+            update_data["website"] = str(update_data["website"])
+
+        if "logo_url" in update_data and update_data["logo_url"] is not None:
+            update_data["logo_url"] = str(update_data["logo_url"])
+
         for field, value in update_data.items():
             setattr(
                 company,
                 field,
                 value
             )
-
+        
         return company_repository.update(
             db,
             company
         )
-
     # =====================================
     # DELETE
     # =====================================

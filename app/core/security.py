@@ -48,7 +48,6 @@ def create_access_token(
 
     return token
 
-
 def decode_access_token(token: str) -> str | None:
     try:
         payload = jwt.decode(
