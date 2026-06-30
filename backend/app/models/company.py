@@ -120,8 +120,7 @@ class Company(Base, TimestampMixin):
 
     jobs = relationship(
         "Job",
-        back_populates="company",
-        cascade="all, delete-orphan"
+        back_populates="company"
     )
 
     # ------------------------------------------------------

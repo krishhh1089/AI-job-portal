@@ -131,70 +131,27 @@ class User(Base, TimestampMixin):
     # RELATIONSHIPS
     # ------------------------------------------------------
 
-    # profile = relationship(
-    #     "UserProfile",
-    #     back_populates="user",
-    #     uselist=False,
-    #     cascade="all, delete-orphan"
-    # )
-
-    # skills = relationship(
-    #     "UserSkill",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan"
-    # )
-
-    # educations = relationship(
-    #     "Education",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan"
-    # )
-
-    # experiences = relationship(
-    #     "Experience",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan"
-    # )
-
-    # certifications = relationship(
-    #     "Certification",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan"
-    # )
-
-    # projects = relationship(
-    #     "Project",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan"
-    # )
-
-    # languages = relationship(
-    #     "UserLanguage",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan"
-    # )
-
-    resumes = relationship(
-        "Resume",
-        back_populates="user",
-        cascade="all, delete-orphan"
+    applications = relationship(
+    "Application",
+    back_populates="user"
     )
 
-    # applications = relationship(
-    #     "Application",
-    #     back_populates="user",
-    #     cascade="all, delete-orphan"
-    # )
+    resumes = relationship(
+    "Resume",
+    back_populates="user",
+    cascade="all, delete-orphan"
+    )
 
     company = relationship(
-        "Company",
-        back_populates="recruiters"
+    "Company",
+    back_populates="recruiters"
     )
 
     jobs = relationship(
     "Job",
     back_populates="recruiter"
-   )
+    )
+    
     # ------------------------------------------------------
     # STRING REPRESENTATION
     # ------------------------------------------------------

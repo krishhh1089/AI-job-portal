@@ -58,8 +58,11 @@ class Resume(Base, TimestampMixin):
         back_populates="resumes"
     )
 
-    # applications relationship will be added later
-
+    applications = relationship(
+    "Application",
+    back_populates="resume"
+    )
+    
     def __repr__(self):
         return (
             f"<Resume("

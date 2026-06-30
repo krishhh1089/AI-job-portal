@@ -71,11 +71,7 @@ class Skill(Base, TimestampMixin):
         back_populates="skill",
         cascade="all, delete-orphan"
     )
-    # Will be added later
-
-    # user_skills
-    # job_skills
-
+   
     # ------------------------------------------------------
     # STRING REPRESENTATION
     # ------------------------------------------------------

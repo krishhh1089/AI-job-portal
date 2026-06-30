@@ -63,19 +63,17 @@ class Job(Base, TimestampMixin):
     company_id = Column(
         UUID(as_uuid=True),
         ForeignKey(
-            "companies.company_id",
-            ondelete="CASCADE"
-        ),
+        "companies.company_id",
+        ondelete="RESTRICT"),
         nullable=False,
         index=True
     )
-
+    
     posted_by = Column(
         UUID(as_uuid=True),
         ForeignKey(
-            "users.user_id",
-            ondelete="CASCADE"
-        ),
+        "users.user_id",
+        ondelete="RESTRICT"),
         nullable=False,
         index=True
     )
@@ -205,9 +203,10 @@ class Job(Base, TimestampMixin):
         cascade="all, delete-orphan"
     )
 
-    # applications will be added later
-    # job_skills will be added later
-
+    applications = relationship(
+    "Application",
+    back_populates="job"
+    )
     # ------------------------------------------------------
     # STRING REPRESENTATION
     # ------------------------------------------------------
