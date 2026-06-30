@@ -23,7 +23,7 @@ class ResumeRepository:
             db.rollback()
             raise
 
-    def get_by_id(
+    def get_resume_by_id(
         self,
         db: Session,
         resume_id: UUID

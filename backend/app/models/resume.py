@@ -32,7 +32,7 @@ class Resume(Base, TimestampMixin):
         index=True
     )
 
-    file_url = Column(
+    file_path = Column(
         Text,
         nullable=False
     )

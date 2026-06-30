@@ -24,7 +24,7 @@ class UpdateResumeRequest(BaseModel):
 class ResumeResponse(TimestampResponse):
     resume_id: UUID
     user_id: UUID
-    file_url: str
+    file_path: str
     file_name: str | None
     is_default: bool
 

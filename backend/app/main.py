@@ -13,6 +13,12 @@ app = FastAPI(
     title="AI Job Portal"
 )
 
+@app.get("/")
+def root():
+    return {
+        "message": "AI Job Portal API is running"
+    }
+
 app.include_router(auth.router)
 app.include_router(company.router)
 app.include_router(skill.router)
