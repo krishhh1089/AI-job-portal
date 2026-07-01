@@ -4,7 +4,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.repositories.user_repository import user_repository
 from app.schemas.user import UpdateUserRequest
 
@@ -203,7 +203,22 @@ class UserService:
         user: User
     ) -> None:
 
-        user_repository.delete(
-            db,
-            user
-        )
+        if user.role == UserRole.ADMIN:
+            user_repository.deactivate_user(db, user)
+            return
+
+        if user.role == UserRole.JOBSEEKER:
+            if user.applications:
+                user_repository.deactivate_user(db, user)
+                return
+
+            user_repository.delete(db, user)
+            return
+
+        if user.role == UserRole.RECRUITER:
+            if user.jobs:
+                user_repository.deactivate_user(db, user)
+                return
+
+            user_repository.delete(db, user)
+            return
