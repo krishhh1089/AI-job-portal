@@ -70,7 +70,7 @@ class ApplicationService:
             raise ValueError(
                 "This job is no longer accepting applications."
             )
-
+        
         # -----------------------------
         # Resume exists
         # -----------------------------
