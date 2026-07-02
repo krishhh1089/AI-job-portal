@@ -165,9 +165,25 @@ class CompanyService:
     def delete_company(
         db: Session,
         company: Company
-    ) -> None:
+    ) -> Company:
 
-        company_repository.delete(
+        return company_repository.deactivate(
             db,
             company
         )
+    
+    # @staticmethod
+    # def permanently_delete_company(
+    #     db: Session,
+    #     company: Company
+    # ) -> None:
+
+    #     if company.jobs:
+    #         raise ValueError(
+    #             "Cannot permanently delete company with jobs."
+    #         )
+
+    #     company_repository.delete(
+    #         db,
+    #         company
+    #     )

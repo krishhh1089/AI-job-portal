@@ -2,6 +2,7 @@ import uuid
 from enum import Enum
 
 from sqlalchemy import (
+    Boolean,
     Column,
     String,
     Text,
@@ -85,6 +86,12 @@ class Company(Base, TimestampMixin):
         ),
         nullable=False
     )
+    
+    is_active = Column(
+        Boolean,
+        nullable=False,
+        default=True
+        )
 
     company_size = Column(
         SAEnum(

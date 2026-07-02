@@ -42,7 +42,8 @@ class CompanyRepository:
         return (
             db.query(Company)
             .filter(
-                Company.company_id == company_id
+                Company.company_id == company_id,
+                Company.is_active == True
             )
             .first()
         )
@@ -56,7 +57,8 @@ class CompanyRepository:
         return (
             db.query(Company)
             .filter(
-                Company.name == name
+                Company.name == name,
+                Company.is_active == True
             )
             .first()
         )
@@ -69,11 +71,12 @@ class CompanyRepository:
     ) -> list[Company]:
 
         return (
-            db.query(Company)
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
+                db.query(Company)
+                .filter(Company.is_active == True)
+                .offset(skip)
+                .limit(limit)
+                .all()
+      )
 
     # =====================================
     # UPDATE
@@ -112,6 +115,19 @@ class CompanyRepository:
         except SQLAlchemyError:
             db.rollback()
             raise
+
+    @staticmethod
+    def deactivate(
+        db: Session,
+        company: Company
+    ) -> Company:
+
+        company.is_active = False
+
+        db.commit()
+        db.refresh(company)
+
+        return company
 
 
 # Singleton Instance
