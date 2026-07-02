@@ -134,6 +134,11 @@ class ResumeService:
             current_user=current_user
         )
 
+        if resume.applications:
+            raise ValueError(
+                "Cannot delete resume because it has been used in job applications."
+            )
+
         resume_repository.delete(
             db=db,
             resume=resume

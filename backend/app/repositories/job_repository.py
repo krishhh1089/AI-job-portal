@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.models.jobs import Job
+from app.models.jobs import Job, JobStatus
 
 
 class JobRepository:
@@ -83,21 +83,36 @@ class JobRepository:
     # DELETE
     # =====================================
 
-    def delete(
+
+    def deactivate(
         self,
         db: Session,
         job: Job
-    ) -> None:
+    ) -> Job:
 
         try:
-            db.delete(job)
+            job.status = JobStatus.CLOSED
+
             db.commit()
+            db.refresh(job)
+
+            return job
 
         except SQLAlchemyError:
             db.rollback()
             raise
+    
+    @staticmethod
+    def delete_job(
+        db: Session,
+        job: Job
+    ) -> Job:
 
-
+        return job_repository.deactivate(
+            db,
+            job
+        )
+    
 # ==========================================================
 # SINGLETON INSTANCE
 # ==========================================================
