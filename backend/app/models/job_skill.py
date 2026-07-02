@@ -28,7 +28,7 @@ class JobSkill(Base):
         UUID(as_uuid=True),
         ForeignKey(
             "skills.skill_id",
-            ondelete="CASCADE"
+            ondelete="RESTRICT"
         ),
         primary_key=True
     )
