@@ -204,9 +204,10 @@ class UserService:
     ) -> None:
 
         if user.role == UserRole.ADMIN:
-            user_repository.deactivate_user(db, user)
-            return
-
+            raise ValueError(
+                "Admins cannot delete or deactivate their own account."
+            )
+        
         if user.role == UserRole.JOBSEEKER:
             if user.applications:
                 user_repository.deactivate_user(db, user)
