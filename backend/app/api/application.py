@@ -60,11 +60,17 @@ def get_my_applications(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return ApplicationService.get_my_applications(
-        db=db,
-        current_user=current_user
-    )
+    try:
+        return ApplicationService.get_my_applications(
+            db=db,
+            current_user=current_user
+        )
 
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e)
+        )
 
 @router.get(
     "/{application_id}",

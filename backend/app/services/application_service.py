@@ -153,11 +153,15 @@ class ApplicationService:
         current_user: User
     ) -> list[Application]:
 
+        if current_user.role != UserRole.JOBSEEKER:
+            raise ValueError(
+                "Only jobseekers can view their applications."
+            )
+
         return application_repository.get_by_user(
             db,
             current_user.user_id
         )
-
     # =====================================
     # JOB APPLICATIONS
     # =====================================
