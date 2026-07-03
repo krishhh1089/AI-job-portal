@@ -75,7 +75,7 @@ class ApplicationService:
         # Resume exists
         # -----------------------------
 
-        resume = resume_repository.get_by_id(
+        resume = resume_repository.get_resume_by_id(
             db,
             application_data.resume_id
         )

@@ -4,7 +4,7 @@ from app.models.base import Base
 from app.db.session import engine
 
 from app.models import user, company, skill, jobs, job_skill, resume
-from app.api import auth, company, resume, skill, job, application
+from app.api import auth, company, resume, skill, job, application, users
 
 
 Base.metadata.create_all(bind=engine)
@@ -25,3 +25,4 @@ app.include_router(skill.router)
 app.include_router(job.router)
 app.include_router(resume.router)
 app.include_router(application.router)
+app.include_router(users.router)
