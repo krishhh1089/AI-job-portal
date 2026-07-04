@@ -1,3 +1,5 @@
+# app/services/resume_service.py
+
 from uuid import UUID
 
 from fastapi import UploadFile
@@ -13,6 +15,13 @@ from app.schemas.resume import UpdateResumeRequest
 from app.utils.file_storage import save_resume
 from app.utils.file_validator import validate_resume
 
+from app.exceptions.custom_exceptions import (
+    BadRequestException,
+    ForbiddenException,
+    NotFoundException,
+    ConflictException
+)
+
 
 class ResumeService:
 
@@ -25,7 +34,7 @@ class ResumeService:
     ) -> Resume:
 
         if current_user.role != UserRole.JOBSEEKER:
-            raise ValueError(
+            raise ForbiddenException(
                 "Only jobseekers can upload resumes."
             )
 
@@ -57,6 +66,11 @@ class ResumeService:
         current_user: User
     ) -> list[Resume]:
 
+        if current_user.role != UserRole.JOBSEEKER:
+            raise ForbiddenException(
+                "Only jobseekers can view resumes."
+            )
+
         return resume_repository.get_by_user(
             db=db,
             user_id=current_user.user_id
@@ -74,13 +88,13 @@ class ResumeService:
             resume_id=resume_id
         )
 
-        if not resume:
-            raise ValueError(
+        if resume is None:
+            raise NotFoundException(
                 "Resume not found."
             )
 
         if resume.user_id != current_user.user_id:
-            raise ValueError(
+            raise ForbiddenException(
                 "You are not allowed to access this resume."
             )
 
@@ -103,6 +117,11 @@ class ResumeService:
         update_data = resume_data.model_dump(
             exclude_unset=True
         )
+
+        if not update_data:
+            raise BadRequestException(
+                "No data provided for update."
+            )
 
         if "is_default" in update_data:
             if update_data["is_default"] is True:
@@ -135,7 +154,7 @@ class ResumeService:
         )
 
         if resume.applications:
-            raise ValueError(
+            raise ConflictException(
                 "Cannot delete resume because it has been used in job applications."
             )
 
@@ -143,3 +162,6 @@ class ResumeService:
             db=db,
             resume=resume
         )
+
+
+resume_service = ResumeService()

@@ -1,3 +1,5 @@
+# app/services/job_service.py
+
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -12,6 +14,12 @@ from app.repositories.job_skill_repository import job_skill_repository
 
 from app.schemas.jobs import CreateJobRequest, UpdateJobRequest
 
+from app.exceptions.custom_exceptions import (
+    BadRequestException,
+    ForbiddenException,
+    NotFoundException
+)
+
 
 class JobService:
 
@@ -23,16 +31,25 @@ class JobService:
     ) -> Job:
 
         if recruiter.role != UserRole.RECRUITER:
-            raise ValueError("Only recruiters can create jobs.")
+            raise ForbiddenException(
+                "Only recruiters can create jobs."
+            )
 
         if recruiter.company_id is None:
-            raise ValueError("Recruiter is not assigned to a company.")
+            raise BadRequestException(
+                "Recruiter is not assigned to a company."
+            )
 
         for skill_id in job_data.skill_ids:
-            skill = skill_repository.get_by_id(db, skill_id)
+            skill = skill_repository.get_by_id(
+                db=db,
+                skill_id=skill_id
+            )
 
             if skill is None:
-                raise ValueError("Invalid skill id.")
+                raise BadRequestException(
+                    "Invalid skill id."
+                )
 
         job_dict = job_data.model_dump(
             exclude={"skill_ids"}
@@ -44,7 +61,10 @@ class JobService:
             posted_by=recruiter.user_id
         )
 
-        job = job_repository.create(db, job)
+        job = job_repository.create(
+            db=db,
+            job=job
+        )
 
         for skill_id in job_data.skill_ids:
             job_skill = JobSkill(
@@ -52,7 +72,10 @@ class JobService:
                 skill_id=skill_id
             )
 
-            job_skill_repository.create(db, job_skill)
+            job_skill_repository.create(
+                db=db,
+                job_skill=job_skill
+            )
 
         return job
 
@@ -60,9 +83,19 @@ class JobService:
     def get_job_by_id(
         db: Session,
         job_id: UUID
-    ) -> Job | None:
+    ) -> Job:
 
-        return job_repository.get_by_id(db, job_id)
+        job = job_repository.get_by_id(
+            db=db,
+            job_id=job_id
+        )
+
+        if job is None:
+            raise NotFoundException(
+                "Job not found."
+            )
+
+        return job
 
     @staticmethod
     def get_all_jobs(
@@ -71,7 +104,11 @@ class JobService:
         limit: int = 100
     ) -> list[Job]:
 
-        return job_repository.get_all(db, skip, limit)
+        return job_repository.get_all(
+            db=db,
+            skip=skip,
+            limit=limit
+        )
 
     @staticmethod
     def update_job(
@@ -81,20 +118,39 @@ class JobService:
         recruiter: User
     ) -> Job:
 
-        job = job_repository.get_by_id(db, job_id)
+        job = job_repository.get_by_id(
+            db=db,
+            job_id=job_id
+        )
 
         if job is None:
-            raise ValueError("Job not found.")
+            raise NotFoundException(
+                "Job not found."
+            )
 
         if recruiter.role != UserRole.RECRUITER:
-            raise ValueError("Only recruiters can update jobs.")
+            raise ForbiddenException(
+                "Only recruiters can update jobs."
+            )
+
+        if recruiter.company_id is None:
+            raise BadRequestException(
+                "Recruiter is not assigned to a company."
+            )
 
         if job.company_id != recruiter.company_id:
-            raise ValueError("You can update only your company's jobs.")
+            raise ForbiddenException(
+                "You can update only your company's jobs."
+            )
 
         update_data = job_data.model_dump(
             exclude_unset=True
         )
+
+        if not update_data:
+            raise BadRequestException(
+                "No data provided for update."
+            )
 
         skill_ids = update_data.pop(
             "skill_ids",
@@ -104,19 +160,27 @@ class JobService:
         for field, value in update_data.items():
             setattr(job, field, value)
 
-        job = job_repository.update(db, job)
+        job = job_repository.update(
+            db=db,
+            job=job
+        )
 
         if skill_ids is not None:
 
             for skill_id in skill_ids:
-                skill = skill_repository.get_by_id(db, skill_id)
+                skill = skill_repository.get_by_id(
+                    db=db,
+                    skill_id=skill_id
+                )
 
                 if skill is None:
-                    raise ValueError("Invalid skill id.")
+                    raise BadRequestException(
+                        "Invalid skill id."
+                    )
 
             job_skill_repository.delete_by_job(
-                db,
-                job.job_id
+                db=db,
+                job_id=job.job_id
             )
 
             for skill_id in skill_ids:
@@ -125,7 +189,10 @@ class JobService:
                     skill_id=skill_id
                 )
 
-                job_skill_repository.create(db, job_skill)
+                job_skill_repository.create(
+                    db=db,
+                    job_skill=job_skill
+                )
 
         return job
 
@@ -136,15 +203,35 @@ class JobService:
         recruiter: User
     ) -> None:
 
-        job = job_repository.get_by_id(db, job_id)
+        job = job_repository.get_by_id(
+            db=db,
+            job_id=job_id
+        )
 
         if job is None:
-            raise ValueError("Job not found.")
+            raise NotFoundException(
+                "Job not found."
+            )
 
         if recruiter.role != UserRole.RECRUITER:
-            raise ValueError("Only recruiters can delete jobs.")
+            raise ForbiddenException(
+                "Only recruiters can delete jobs."
+            )
+
+        if recruiter.company_id is None:
+            raise BadRequestException(
+                "Recruiter is not assigned to a company."
+            )
 
         if job.company_id != recruiter.company_id:
-            raise ValueError("You can delete only your company's jobs.")
+            raise ForbiddenException(
+                "You can delete only your company's jobs."
+            )
 
-        job_repository.delete(db, job)
+        job_repository.delete(
+            db=db,
+            job=job
+        )
+
+
+job_service = JobService()

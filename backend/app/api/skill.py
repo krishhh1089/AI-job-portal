@@ -1,18 +1,22 @@
+# app/routers/skill_router.py
+
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.dependencies.database import get_db
 from app.dependencies.auth_dependencies import get_current_user
 
-from app.models.user import User, UserRole
+from app.models.user import User
+
 from app.schemas.skill import (
     CreateSkillRequest,
     UpdateSkillRequest,
     SkillResponse
 )
-from app.services.skill_service import SkillService
+
+from app.services.skill_service import skill_service
 
 
 router = APIRouter(
@@ -31,23 +35,11 @@ def create_skill(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admin can create skills."
-        )
-
-    try:
-        return SkillService.create_skill(
-            db,
-            skill_data
-        )
-
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+    return skill_service.create_skill(
+        db=db,
+        skill_data=skill_data,
+        current_user=current_user
+    )
 
 
 @router.get(
@@ -59,10 +51,10 @@ def get_all_skills(
     limit: int = 100,
     db: Session = Depends(get_db)
 ):
-    return SkillService.get_all_skills(
-        db,
-        skip,
-        limit
+    return skill_service.get_all_skills(
+        db=db,
+        skip=skip,
+        limit=limit
     )
 
 
@@ -74,18 +66,10 @@ def get_skill_by_id(
     skill_id: UUID,
     db: Session = Depends(get_db)
 ):
-    skill = SkillService.get_skill_by_id(
-        db,
-        skill_id
+    return skill_service.get_skill_by_id(
+        db=db,
+        skill_id=skill_id
     )
-
-    if skill is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Skill not found."
-        )
-
-    return skill
 
 
 @router.patch(
@@ -98,35 +82,12 @@ def update_skill(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admin can update skills."
-        )
-
-    skill = SkillService.get_skill_by_id(
-        db,
-        skill_id
+    return skill_service.update_skill(
+        db=db,
+        skill_id=skill_id,
+        skill_data=skill_data,
+        current_user=current_user
     )
-
-    if skill is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Skill not found."
-        )
-
-    try:
-        return SkillService.update_skill(
-            db,
-            skill,
-            skill_data
-        )
-
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
 
 
 @router.delete(
@@ -138,24 +99,8 @@ def delete_skill(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admin can delete skills."
-        )
-
-    skill = SkillService.get_skill_by_id(
-        db,
-        skill_id
-    )
-
-    if skill is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Skill not found."
-        )
-
-    SkillService.delete_skill(
-        db,
-        skill
+    skill_service.delete_skill(
+        db=db,
+        skill_id=skill_id,
+        current_user=current_user
     )

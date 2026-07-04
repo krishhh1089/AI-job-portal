@@ -113,18 +113,6 @@ def delete_company(
         company_id
     )
 
-    if company is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Company not found."
-        )
-
-    if current_user.company_id != company.company_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can delete only your own company."
-        )
-
     CompanyService.delete_company(
         db,
         company

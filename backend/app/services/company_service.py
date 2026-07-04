@@ -1,3 +1,5 @@
+# app/services/company_service.py
+
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -5,19 +7,20 @@ from sqlalchemy.orm import Session
 from app.models.company import Company
 from app.models.user import User, UserRole
 
-from app.repositories.company_repository import (
-    company_repository
-)
-
-from app.repositories.user_repository import (
-    user_repository
-)
+from app.repositories.company_repository import company_repository
+from app.repositories.user_repository import user_repository
 
 from app.schemas.company import (
     CreateCompanyRequest,
     UpdateCompanyRequest
 )
-from backend.app.schemas import company
+
+from app.exceptions.custom_exceptions import (
+    BadRequestException,
+    ForbiddenException,
+    NotFoundException,
+    ConflictException
+)
 
 
 class CompanyService:
@@ -33,41 +36,26 @@ class CompanyService:
         recruiter: User
     ) -> Company:
 
-        # ---------------------------------
-        # Only recruiters can create company
-        # ---------------------------------
-
         if recruiter.role != UserRole.RECRUITER:
-            raise ValueError(
+            raise ForbiddenException(
                 "Only recruiters can create companies."
             )
 
-        # ---------------------------------
-        # Recruiter already has company
-        # ---------------------------------
-
         if recruiter.company_id is not None:
-            raise ValueError(
+            raise ConflictException(
                 "Recruiter already belongs to a company."
             )
 
-        # ---------------------------------
-        # Company name already exists
-        # ---------------------------------
-
         existing_company = company_repository.get_by_name(
-            db,
-            company_data.name
+            db=db,
+            name=company_data.name
         )
 
         if existing_company:
-            raise ValueError(
+            raise ConflictException(
                 "Company already exists."
             )
 
-        # ---------------------------------
-        # Create company object
-        # ---------------------------------
         company_dict = company_data.model_dump()
 
         if company_dict.get("website") is not None:
@@ -76,27 +64,22 @@ class CompanyService:
         if company_dict.get("logo_url") is not None:
             company_dict["logo_url"] = str(company_dict["logo_url"])
 
-        company = Company(
-            **company_dict
-        )
+        company = Company(**company_dict)
 
         company = company_repository.create(
-            db,
-            company
+            db=db,
+            company=company
         )
-
-        # ---------------------------------
-        # Link recruiter with company
-        # ---------------------------------
 
         recruiter.company_id = company.company_id
 
         user_repository.update(
-            db,
-            recruiter
+            db=db,
+            user=recruiter
         )
 
         return company
+
     # =====================================
     # READ
     # =====================================
@@ -105,12 +88,17 @@ class CompanyService:
     def get_company_by_id(
         db: Session,
         company_id: UUID
-    ) -> Company | None:
+    ) -> Company:
 
-        return company_repository.get_by_id(
-            db,
-            company_id
+        company = company_repository.get_by_id(
+            db=db,
+            company_id=company_id
         )
+
+        if company is None:
+            raise NotFoundException("Company not found.")
+
+        return company
 
     @staticmethod
     def get_all_companies(
@@ -120,9 +108,9 @@ class CompanyService:
     ) -> list[Company]:
 
         return company_repository.get_all(
-            db,
-            skip,
-            limit
+            db=db,
+            skip=skip,
+            limit=limit
         )
 
     # =====================================
@@ -132,22 +120,38 @@ class CompanyService:
     @staticmethod
     def update_company(
         db: Session,
-        company: Company,
+        company_id: UUID,
         company_data: UpdateCompanyRequest,
         current_user: User
     ) -> Company:
 
+        company = company_repository.get_by_id(
+            db=db,
+            company_id=company_id
+        )
+
         if company is None:
             raise NotFoundException("Company not found.")
 
+        if current_user.role != UserRole.RECRUITER:
+            raise ForbiddenException(
+                "Only recruiters can update companies."
+            )
+
         if current_user.company_id != company.company_id:
-            raise ForbiddenException("You can update only your own company.")
-        
+            raise ForbiddenException(
+                "You can update only your own company."
+            )
+
         update_data = company_data.model_dump(
             exclude_unset=True
         )
-        
-        # Convert HttpUrl to string
+
+        if not update_data:
+            raise BadRequestException(
+                "No data provided for update."
+            )
+
         if "website" in update_data and update_data["website"] is not None:
             update_data["website"] = str(update_data["website"])
 
@@ -155,43 +159,46 @@ class CompanyService:
             update_data["logo_url"] = str(update_data["logo_url"])
 
         for field, value in update_data.items():
-            setattr(
-                company,
-                field,
-                value
-            )
-        
+            setattr(company, field, value)
+
         return company_repository.update(
-            db,
-            company
+            db=db,
+            company=company
         )
+
     # =====================================
-    # DELETE
+    # DELETE / DEACTIVATE
     # =====================================
 
     @staticmethod
     def delete_company(
         db: Session,
-        company: Company
+        company_id: UUID,
+        current_user: User
     ) -> Company:
 
-        return company_repository.deactivate(
-            db,
-            company
+        company = company_repository.get_by_id(
+            db=db,
+            company_id=company_id
         )
-    
-    # @staticmethod
-    # def permanently_delete_company(
-    #     db: Session,
-    #     company: Company
-    # ) -> None:
 
-    #     if company.jobs:
-    #         raise ValueError(
-    #             "Cannot permanently delete company with jobs."
-    #         )
+        if company is None:
+            raise NotFoundException("Company not found.")
 
-    #     company_repository.delete(
-    #         db,
-    #         company
-    #     )
+        if current_user.role != UserRole.RECRUITER:
+            raise ForbiddenException(
+                "Only recruiters can delete companies."
+            )
+
+        if current_user.company_id != company.company_id:
+            raise ForbiddenException(
+                "You can delete only your own company."
+            )
+
+        return company_repository.deactivate(
+            db=db,
+            company=company
+        )
+
+
+company_service = CompanyService()

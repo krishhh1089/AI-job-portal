@@ -8,27 +8,35 @@ from app.models.user import User, UserRole
 from app.repositories.user_repository import user_repository
 from app.schemas.user import UpdateUserRequest
 
+from app.exceptions.custom_exceptions import (
+    BadRequestException,
+    ForbiddenException,
+    NotFoundException,
+    ConflictException
+)
+
 
 class UserService:
-
-    # =====================================
-    # GET USER BY ID
-    # =====================================
 
     @staticmethod
     def get_user_by_id(
         db: Session,
-        user_id: UUID
-    ) -> User | None:
+        user_id: UUID,
+        current_user: User
+    ) -> User:
 
-        return user_repository.get_by_id(
-            db,
-            user_id
+        if current_user.role != UserRole.ADMIN:
+            raise ForbiddenException("Only admins can view users.")
+
+        user = user_repository.get_by_id(
+            db=db,
+            user_id=user_id
         )
 
-    # =====================================
-    # GET USER BY EMAIL
-    # =====================================
+        if user is None:
+            raise NotFoundException("User not found.")
+
+        return user
 
     @staticmethod
     def get_user_by_email(
@@ -39,30 +47,26 @@ class UserService:
         normalized_email = email.lower().strip()
 
         return user_repository.get_by_email(
-            db,
-            normalized_email
+            db=db,
+            email=normalized_email
         )
-
-    # =====================================
-    # GET ALL USERS
-    # =====================================
 
     @staticmethod
     def get_all_users(
         db: Session,
+        current_user: User,
         skip: int = 0,
         limit: int = 100
     ) -> list[User]:
 
-        return user_repository.get_all(
-            db,
-            skip,
-            limit
-        )
+        if current_user.role != UserRole.ADMIN:
+            raise ForbiddenException("Only admins can view all users.")
 
-    # =====================================
-    # UPDATE USER
-    # =====================================
+        return user_repository.get_all(
+            db=db,
+            skip=skip,
+            limit=limit
+        )
 
     @staticmethod
     def update_user(
@@ -75,29 +79,21 @@ class UserService:
             exclude_unset=True
         )
 
-        # -------------------------------
-        # Normalize email if updated
-        # -------------------------------
+        if not update_data:
+            raise BadRequestException("No data provided for update.")
 
         if "email" in update_data:
             new_email = update_data["email"].lower().strip()
 
             existing_user = user_repository.get_by_email(
-                db,
-                new_email
+                db=db,
+                email=new_email
             )
 
-            if (
-                existing_user
-                and existing_user.user_id != user.user_id
-            ):
-                raise ValueError("Email already exists.")
+            if existing_user and existing_user.user_id != user.user_id:
+                raise ConflictException("Email already exists.")
 
             update_data["email"] = new_email
-
-        # -------------------------------
-        # Prevent dangerous fields update
-        # -------------------------------
 
         blocked_fields = {
             "user_id",
@@ -117,25 +113,13 @@ class UserService:
         for field in blocked_fields:
             update_data.pop(field, None)
 
-        # -------------------------------
-        # Apply update
-        # -------------------------------
-
         for field, value in update_data.items():
-            setattr(
-                user,
-                field,
-                value
-            )
+            setattr(user, field, value)
 
         return user_repository.update(
-            db,
-            user
+            db=db,
+            user=user
         )
-
-    # =====================================
-    # VERIFY USER
-    # =====================================
 
     @staticmethod
     def verify_user(
@@ -144,43 +128,60 @@ class UserService:
     ) -> User:
 
         return user_repository.verify_user(
-            db,
-            user
+            db=db,
+            user=user
         )
-
-    # =====================================
-    # ACTIVATE USER
-    # =====================================
 
     @staticmethod
     def activate_user(
         db: Session,
-        user: User
+        user_id: UUID,
+        current_user: User
     ) -> User:
 
-        return user_repository.activate_user(
-            db,
-            user
+        if current_user.role != UserRole.ADMIN:
+            raise ForbiddenException("Only admins can activate users.")
+
+        user = user_repository.get_by_id(
+            db=db,
+            user_id=user_id
         )
 
-    # =====================================
-    # DEACTIVATE USER
-    # =====================================
+        if user is None:
+            raise NotFoundException("User not found.")
+
+        return user_repository.activate_user(
+            db=db,
+            user=user
+        )
 
     @staticmethod
     def deactivate_user(
         db: Session,
-        user: User
+        user_id: UUID,
+        current_user: User
     ) -> User:
 
-        return user_repository.deactivate_user(
-            db,
-            user
+        if current_user.role != UserRole.ADMIN:
+            raise ForbiddenException("Only admins can deactivate users.")
+
+        user = user_repository.get_by_id(
+            db=db,
+            user_id=user_id
         )
 
-    # =====================================
-    # UPDATE LAST LOGIN
-    # =====================================
+        if user is None:
+            raise NotFoundException("User not found.")
+
+        if current_user.user_id == user.user_id:
+            raise BadRequestException(
+                "Admins cannot deactivate their own account."
+            )
+
+        return user_repository.deactivate_user(
+            db=db,
+            user=user
+        )
 
     @staticmethod
     def update_last_login(
@@ -189,13 +190,9 @@ class UserService:
     ) -> User:
 
         return user_repository.update_last_login(
-            db,
-            user
+            db=db,
+            user=user
         )
-
-    # =====================================
-    # DELETE USER
-    # =====================================
 
     @staticmethod
     def delete_user(
@@ -204,22 +201,25 @@ class UserService:
     ) -> None:
 
         if user.role == UserRole.ADMIN:
-            raise ValueError(
+            raise BadRequestException(
                 "Admins cannot delete or deactivate their own account."
             )
-        
+
         if user.role == UserRole.JOBSEEKER:
             if user.applications:
-                user_repository.deactivate_user(db, user)
+                user_repository.deactivate_user(db=db, user=user)
                 return
 
-            user_repository.delete(db, user)
+            user_repository.delete(db=db, user=user)
             return
 
         if user.role == UserRole.RECRUITER:
             if user.jobs:
-                user_repository.deactivate_user(db, user)
+                user_repository.deactivate_user(db=db, user=user)
                 return
 
-            user_repository.delete(db, user)
+            user_repository.delete(db=db, user=user)
             return
+
+
+user_service = UserService()

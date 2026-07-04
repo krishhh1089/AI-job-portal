@@ -1,24 +1,21 @@
+# app/routers/user_router.py
+
 from uuid import UUID
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    status
-)
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.dependencies.database import get_db
 from app.dependencies.auth_dependencies import get_current_user
 
-from app.models.user import User, UserRole
+from app.models.user import User
 
 from app.schemas.user import (
     UserResponse,
     UpdateUserRequest
 )
 
-from app.services.user_service import UserService
+from app.services.user_service import user_service
 
 
 router = APIRouter(
@@ -26,10 +23,6 @@ router = APIRouter(
     tags=["Users"]
 )
 
-
-# =====================================
-# GET MY PROFILE
-# =====================================
 
 @router.get(
     "/me",
@@ -41,10 +34,6 @@ def get_my_profile(
     return current_user
 
 
-# =====================================
-# UPDATE MY PROFILE
-# =====================================
-
 @router.patch(
     "/me",
     response_model=UserResponse
@@ -54,32 +43,19 @@ def update_my_profile(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    return user_service.update_user(
+        db=db,
+        user=current_user,
+        user_data=user_data
+    )
 
-    try:
-        return UserService.update_user(
-            db=db,
-            user=current_user,
-            user_data=user_data
-        )
-
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-
-
-# =====================================
-# DELETE MY ACCOUNT
-# =====================================
 
 @router.delete("/me")
 def delete_my_account(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
-    UserService.delete_user(
+    user_service.delete_user(
         db=db,
         user=current_user
     )
@@ -89,10 +65,6 @@ def delete_my_account(
     }
 
 
-# =====================================
-# GET ALL USERS (ADMIN)
-# =====================================
-
 @router.get(
     "/",
     response_model=list[UserResponse]
@@ -101,19 +73,11 @@ def get_all_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    return user_service.get_all_users(
+        db=db,
+        current_user=current_user
+    )
 
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can view all users."
-        )
-
-    return UserService.get_all_users(db)
-
-
-# =====================================
-# GET USER BY ID (ADMIN)
-# =====================================
 
 @router.get(
     "/{user_id}",
@@ -124,30 +88,12 @@ def get_user_by_id(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can view users."
-        )
-
-    user = UserService.get_user_by_id(
-        db,
-        user_id
+    return user_service.get_user_by_id(
+        db=db,
+        user_id=user_id,
+        current_user=current_user
     )
 
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
-
-    return user
-
-
-# =====================================
-# ACTIVATE USER (ADMIN)
-# =====================================
 
 @router.patch(
     "/{user_id}/activate",
@@ -158,33 +104,12 @@ def activate_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can activate users."
-        )
-
-    user = UserService.get_user_by_id(
-        db,
-        user_id
+    return user_service.activate_user(
+        db=db,
+        user_id=user_id,
+        current_user=current_user
     )
 
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
-
-    return UserService.activate_user(
-        db,
-        user
-    )
-
-
-# =====================================
-# DEACTIVATE USER (ADMIN)
-# =====================================
 
 @router.patch(
     "/{user_id}/deactivate",
@@ -195,31 +120,8 @@ def deactivate_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can deactivate users."
-        )
-
-    user = UserService.get_user_by_id(
-        db,
-        user_id
-    )
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
-    
-    if current_user.user_id == user.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Admins cannot deactivate their own account."
-        )
-
-    return UserService.deactivate_user(
-        db,
-        user
+    return user_service.deactivate_user(
+        db=db,
+        user_id=user_id,
+        current_user=current_user
     )
