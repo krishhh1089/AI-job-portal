@@ -135,13 +135,26 @@ class ApplicationService:
     @staticmethod
     def get_application_by_id(
         db: Session,
-        application_id: UUID
-    ) -> Application | None:
+        application_id: UUID,
+        current_user: User
+    ) -> Application:
 
-        return application_repository.get_by_id(
+        application = application_repository.get_by_id(
             db,
             application_id
         )
+
+        if application is None:
+            raise ValueError(
+                "Application not found."
+            )
+
+        if application.user_id != current_user.user_id:
+            raise PermissionError(
+                "You can view only your own application."
+            )
+
+        return application
 
     # =====================================
     # MY APPLICATIONS

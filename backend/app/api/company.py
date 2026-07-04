@@ -31,17 +31,10 @@ def create_company(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    try:
         return CompanyService.create_company(
             db,
             company_data,
             current_user
-        )
-
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
         )
 
 
@@ -98,22 +91,11 @@ def update_company(
         company_id
     )
 
-    if company is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Company not found."
-        )
-
-    if current_user.company_id != company.company_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can update only your own company."
-        )
-
     return CompanyService.update_company(
         db,
         company,
-        company_data
+        company_data,
+        current_user
     )
 
 

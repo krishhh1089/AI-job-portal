@@ -5,6 +5,7 @@ from app.db.session import engine
 
 from app.models import user, company, skill, jobs, job_skill, resume
 from app.api import auth, company, resume, skill, job, application, users
+from app.exceptions.handlers import register_exception_handlers
 
 
 Base.metadata.create_all(bind=engine)
@@ -12,6 +13,8 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="AI Job Portal"
 )
+
+register_exception_handlers(app)
 
 @app.get("/")
 def root():
@@ -26,3 +29,4 @@ app.include_router(job.router)
 app.include_router(resume.router)
 app.include_router(application.router)
 app.include_router(users.router)
+

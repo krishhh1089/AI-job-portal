@@ -17,6 +17,7 @@ from app.schemas.company import (
     CreateCompanyRequest,
     UpdateCompanyRequest
 )
+from backend.app.schemas import company
 
 
 class CompanyService:
@@ -132,13 +133,20 @@ class CompanyService:
     def update_company(
         db: Session,
         company: Company,
-        company_data: UpdateCompanyRequest
+        company_data: UpdateCompanyRequest,
+        current_user: User
     ) -> Company:
 
+        if company is None:
+            raise NotFoundException("Company not found.")
+
+        if current_user.company_id != company.company_id:
+            raise ForbiddenException("You can update only your own company.")
+        
         update_data = company_data.model_dump(
             exclude_unset=True
         )
-
+        
         # Convert HttpUrl to string
         if "website" in update_data and update_data["website"] is not None:
             update_data["website"] = str(update_data["website"])
