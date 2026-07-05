@@ -16,7 +16,6 @@ from app.schemas.user import UserResponse
 from app.services.auth_service import AuthService
 from app.models.user import User
 
-
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
@@ -35,6 +34,7 @@ def register(
             db,
             user_data
         )
+
 
 @router.post(
     "/login",

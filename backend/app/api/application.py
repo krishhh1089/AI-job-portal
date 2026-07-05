@@ -46,7 +46,6 @@ def create_application(
         )
 
 
-
 @router.get(
     "/",
     response_model=list[ApplicationResponse]
