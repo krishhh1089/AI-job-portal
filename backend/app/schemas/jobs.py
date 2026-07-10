@@ -1,3 +1,4 @@
+from typing import List
 from uuid import UUID
 from datetime import date, datetime
 
@@ -125,3 +126,12 @@ class JobResponse(TimestampResponse):
 
     class Config:
         from_attributes = True
+
+      
+
+
+
+class CursorJobListResponse(BaseModel):
+    limit: int
+    next_cursor: str | None
+    jobs: List[JobResponse]

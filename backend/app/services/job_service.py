@@ -97,18 +97,18 @@ class JobService:
 
         return job
 
-    @staticmethod
-    def get_all_jobs(
-        db: Session,
-        skip: int = 0,
-        limit: int = 100
-    ) -> list[Job]:
+    # @staticmethod
+    # def get_all_jobs(
+    #     db: Session,
+    #     skip: int = 0,
+    #     limit: int = 100
+    # ) -> list[Job]:
 
-        return job_repository.get_all(
-            db=db,
-            skip=skip,
-            limit=limit
-        )
+    #     return job_repository.get_all(
+    #         db=db,
+    #         skip=skip,
+    #         limit=limit
+    #     )
 
     @staticmethod
     def update_job(
@@ -232,6 +232,20 @@ class JobService:
             db=db,
             job=job
         )
-
+    # app/services/job_service.py
+    
+    #cursor pagination
+    
+    @staticmethod
+    def get_all_jobs(
+        db: Session,
+        limit: int = 10,
+        cursor: str | None = None
+    ):
+        return job_repository.get_all_cursor(
+            db=db,
+            limit=limit,
+            cursor=cursor
+        )
 
 job_service = JobService()
