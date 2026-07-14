@@ -79,15 +79,19 @@ class SkillService:
     @staticmethod
     def get_all_skills(
         db: Session,
-        skip: int = 0,
+        search: str | None = None,
+        sort_by: str = "name",
+        sort_order: str = "asc",
         limit: int = 100
     ) -> list[Skill]:
 
         return skill_repository.get_all(
             db=db,
-            skip=skip,
+            search=search,
+            sort_by=sort_by,
+            sort_order=sort_order,
             limit=limit
-        )
+    )
 
     @staticmethod
     def update_skill(

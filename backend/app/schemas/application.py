@@ -26,3 +26,8 @@ class ApplicationResponse(TimestampResponse):
 
     class Config:
         from_attributes = True
+
+class ApplicationListResponse(BaseModel):
+    items: list[ApplicationResponse]
+    next_cursor: str | None = None
+    has_next: bool

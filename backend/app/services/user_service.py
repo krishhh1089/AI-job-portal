@@ -55,17 +55,31 @@ class UserService:
     def get_all_users(
         db: Session,
         current_user: User,
-        skip: int = 0,
-        limit: int = 100
-    ) -> list[User]:
+        limit: int = 20,
+        cursor: str | None = None,
+        search: str | None = None,
+        role: UserRole | None = None,
+        is_active: bool | None = None,
+        is_verified: bool | None = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc"
+    ) -> dict:
 
         if current_user.role != UserRole.ADMIN:
-            raise ForbiddenException("Only admins can view all users.")
+            raise ForbiddenException(
+                "Only admins can view all users."
+            )
 
         return user_repository.get_all(
             db=db,
-            skip=skip,
-            limit=limit
+            limit=limit,
+            cursor=cursor,
+            search=search,
+            role=role,
+            is_active=is_active,
+            is_verified=is_verified,
+            sort_by=sort_by,
+            sort_order=sort_order
         )
 
     @staticmethod

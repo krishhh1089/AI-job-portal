@@ -82,3 +82,9 @@ class CompanyResponse(TimestampResponse):
 
     class Config:
         from_attributes = True
+
+    
+class CompanyListResponse(BaseModel):
+    items: list[CompanyResponse]
+    next_cursor: str | None = None
+    has_next: bool

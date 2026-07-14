@@ -8,6 +8,11 @@ from app.core.security import (
     verify_password,
     create_access_token
 )
+from app.exceptions.custom_exceptions import (
+    ConflictException,
+    UnauthorizedException,
+    ForbiddenException
+)
 
 
 class AuthService:
@@ -26,7 +31,9 @@ class AuthService:
         )
 
         if existing_user:
-            raise ValueError("Email already registered.")
+            raise ConflictException(
+                "Email already registered."
+            )
 
         new_user = User(
             email=email,
@@ -52,17 +59,23 @@ class AuthService:
             email
         )
 
-        if not user:
-            raise ValueError("Invalid email or password.")
+        if user is None:
+            raise UnauthorizedException(
+                "Invalid email or password."
+            )
 
         if not verify_password(
             login_data.password,
             user.password_hash
         ):
-            raise ValueError("Invalid email or password.")
+            raise UnauthorizedException(
+                "Invalid email or password."
+            )
 
         if not user.is_active:
-            raise ValueError("Account is deactivated.")
+            raise ForbiddenException(
+                "Account is deactivated."
+            )
 
         user_repository.update_last_login(
             db,

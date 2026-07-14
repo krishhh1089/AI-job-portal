@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from app.dependencies.database import get_db
 from app.dependencies.auth_dependencies import get_current_user
@@ -10,7 +10,8 @@ from app.models.user import User
 from app.schemas.company import (
     CreateCompanyRequest,
     UpdateCompanyRequest,
-    CompanyResponse
+    CompanyResponse,
+    CompanyListResponse
 )
 from app.services.company_service import CompanyService
 
@@ -39,18 +40,35 @@ def create_company(
 
 
 @router.get(
-    "/",
-    response_model=list[CompanyResponse]
+    "",
+    response_model=CompanyListResponse
 )
 def get_all_companies(
-    skip: int = 0,
-    limit: int = 100,
+    search: str | None = Query(default=None),
+    sort_by: str = Query(
+        default="created_at",
+        pattern="^(created_at|name|location)$"
+    ),
+    sort_order: str = Query(
+        default="desc",
+        pattern="^(asc|desc)$"
+    ),
+    limit: int = Query(
+        default=20,
+        ge=1,
+        le=100
+    ),
+    cursor: str | None = Query(default=None),
     db: Session = Depends(get_db)
 ):
+
     return CompanyService.get_all_companies(
-        db,
-        skip,
-        limit
+        db=db,
+        limit=limit,
+        cursor=cursor,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order
     )
 
 

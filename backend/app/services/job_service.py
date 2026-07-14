@@ -236,16 +236,24 @@ class JobService:
     
     #cursor pagination
     
-    @staticmethod
     def get_all_jobs(
+        self,
         db: Session,
-        limit: int = 10,
-        cursor: str | None = None
-    ):
-        return job_repository.get_all_cursor(
-            db=db,
-            limit=limit,
-            cursor=cursor
-        )
+        limit: int = 20,
+        cursor: str | None = None,
+        search: str | None = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc"
+    ) -> dict:
+
+            return job_repository.get_all(
+                db=db,
+                limit=limit,
+                cursor=cursor,
+                search=search,
+                sort_by=sort_by,
+                sort_order=sort_order
+            )
+       
 
 job_service = JobService()

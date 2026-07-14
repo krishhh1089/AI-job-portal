@@ -2,6 +2,13 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.exceptions.custom_exceptions import (
+    BadRequestException,
+    ConflictException,
+    ForbiddenException,
+    NotFoundException
+)
+
 from app.models.application import (
     Application,
     ApplicationStatus
@@ -24,7 +31,6 @@ from app.schemas.application import (
     UpdateApplicationStatusRequest
 )
 
-from app.models.application import Application, ApplicationStatus
 
 class ApplicationService:
 
@@ -39,18 +45,10 @@ class ApplicationService:
         current_user: User
     ) -> Application:
 
-        # -----------------------------
-        # Only jobseekers can apply
-        # -----------------------------
-
         if current_user.role != UserRole.JOBSEEKER:
-            raise ValueError(
+            raise ForbiddenException(
                 "Only jobseekers can apply for jobs."
             )
-
-        # -----------------------------
-        # Job exists
-        # -----------------------------
 
         job = job_repository.get_by_id(
             db,
@@ -58,22 +56,14 @@ class ApplicationService:
         )
 
         if job is None:
-            raise ValueError(
+            raise NotFoundException(
                 "Job not found."
             )
 
-        # -----------------------------
-        # Job is active
-        # -----------------------------
-
         if job.status != JobStatus.ACTIVE:
-            raise ValueError(
+            raise BadRequestException(
                 "This job is no longer accepting applications."
             )
-        
-        # -----------------------------
-        # Resume exists
-        # -----------------------------
 
         resume = resume_repository.get_resume_by_id(
             db,
@@ -81,22 +71,14 @@ class ApplicationService:
         )
 
         if resume is None:
-            raise ValueError(
+            raise NotFoundException(
                 "Resume not found."
             )
 
-        # -----------------------------
-        # Resume belongs to user
-        # -----------------------------
-
         if resume.user_id != current_user.user_id:
-            raise ValueError(
+            raise ForbiddenException(
                 "You can only use your own resume."
             )
-
-        # -----------------------------
-        # Already applied
-        # -----------------------------
 
         existing_application = (
             application_repository.get_by_user_and_job(
@@ -107,13 +89,9 @@ class ApplicationService:
         )
 
         if existing_application:
-            raise ValueError(
+            raise ConflictException(
                 "You have already applied for this job."
             )
-
-        # -----------------------------
-        # Create application
-        # -----------------------------
 
         application = Application(
             job_id=application_data.job_id,
@@ -145,12 +123,12 @@ class ApplicationService:
         )
 
         if application is None:
-            raise ValueError(
+            raise NotFoundException(
                 "Application not found."
             )
 
         if application.user_id != current_user.user_id:
-            raise PermissionError(
+            raise ForbiddenException(
                 "You can view only your own application."
             )
 
@@ -163,18 +141,29 @@ class ApplicationService:
     @staticmethod
     def get_my_applications(
         db: Session,
-        current_user: User
-    ) -> list[Application]:
+        current_user: User,
+        limit: int = 20,
+        cursor: str | None = None,
+        status: ApplicationStatus | None = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc"
+    ) -> dict:
 
         if current_user.role != UserRole.JOBSEEKER:
-            raise ValueError(
+            raise ForbiddenException(
                 "Only jobseekers can view their applications."
             )
 
         return application_repository.get_by_user(
-            db,
-            current_user.user_id
+            db=db,
+            user_id=current_user.user_id,
+            limit=limit,
+            cursor=cursor,
+            status=status,
+            sort_by=sort_by,
+            sort_order=sort_order
         )
+
     # =====================================
     # JOB APPLICATIONS
     # =====================================
@@ -183,11 +172,16 @@ class ApplicationService:
     def get_job_applications(
         db: Session,
         job_id: UUID,
-        recruiter: User
-    ) -> list[Application]:
+        recruiter: User,
+        limit: int = 20,
+        cursor: str | None = None,
+        status: ApplicationStatus | None = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc"
+    ) -> dict:
 
         if recruiter.role != UserRole.RECRUITER:
-            raise ValueError(
+            raise ForbiddenException(
                 "Only recruiters can view applications."
             )
 
@@ -197,18 +191,23 @@ class ApplicationService:
         )
 
         if job is None:
-            raise ValueError(
+            raise NotFoundException(
                 "Job not found."
             )
 
         if job.company_id != recruiter.company_id:
-            raise ValueError(
+            raise ForbiddenException(
                 "You can only view applications for your company's jobs."
             )
 
         return application_repository.get_by_job(
-            db,
-            job_id
+            db=db,
+            job_id=job_id,
+            limit=limit,
+            cursor=cursor,
+            status=status,
+            sort_by=sort_by,
+            sort_order=sort_order
         )
 
     # =====================================
@@ -224,7 +223,7 @@ class ApplicationService:
     ) -> Application:
 
         if recruiter.role != UserRole.RECRUITER:
-            raise ValueError(
+            raise ForbiddenException(
                 "Only recruiters can update application status."
             )
 
@@ -234,12 +233,12 @@ class ApplicationService:
         )
 
         if application is None:
-            raise ValueError(
+            raise NotFoundException(
                 "Application not found."
             )
 
         if application.job.company_id != recruiter.company_id:
-            raise ValueError(
+            raise ForbiddenException(
                 "You can update only your company's applications."
             )
 
@@ -251,8 +250,9 @@ class ApplicationService:
         }
 
         if application_data.status not in allowed_statuses:
-            raise ValueError(
-                "Recruiters can only set status to Reviewing, Shortlisted, Rejected, or Hired."
+            raise BadRequestException(
+                "Recruiters can only set status to Reviewing, "
+                "Shortlisted, Rejected, or Hired."
             )
 
         application.status = application_data.status
@@ -279,18 +279,26 @@ class ApplicationService:
         )
 
         if application is None:
-            raise ValueError(
+            raise NotFoundException(
                 "Application not found."
             )
 
         if application.user_id != current_user.user_id:
-            raise ValueError(
+            raise ForbiddenException(
                 "You can withdraw only your own application."
             )
 
-        application.status = (
-            ApplicationStatus.WITHDRAWN
-        )
+        if application.status == ApplicationStatus.WITHDRAWN:
+            raise BadRequestException(
+                "Application is already withdrawn."
+            )
+
+        if application.status == ApplicationStatus.HIRED:
+            raise BadRequestException(
+                "A hired application cannot be withdrawn."
+            )
+
+        application.status = ApplicationStatus.WITHDRAWN
 
         return application_repository.update(
             db,

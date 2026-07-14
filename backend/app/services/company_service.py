@@ -103,15 +103,22 @@ class CompanyService:
     @staticmethod
     def get_all_companies(
         db: Session,
-        skip: int = 0,
-        limit: int = 100
-    ) -> list[Company]:
+        limit: int = 20,
+        cursor: str | None = None,
+        search: str | None = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc"
+    ) -> dict:
 
         return company_repository.get_all(
             db=db,
-            skip=skip,
-            limit=limit
+            limit=limit,
+            cursor=cursor,
+            search=search,
+            sort_by=sort_by,
+            sort_order=sort_order
         )
+
 
     # =====================================
     # UPDATE

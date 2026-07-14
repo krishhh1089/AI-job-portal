@@ -131,7 +131,7 @@ class JobResponse(TimestampResponse):
 
 
 
-class CursorJobListResponse(BaseModel):
-    limit: int
+class JobListResponse(BaseModel):
+    items: list[JobResponse]
     next_cursor: str | None
-    jobs: List[JobResponse]
+    has_next: bool

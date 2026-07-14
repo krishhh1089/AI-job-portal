@@ -4,6 +4,7 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Query,
     status
 )
 from sqlalchemy.orm import Session
@@ -12,11 +13,13 @@ from app.dependencies.database import get_db
 from app.dependencies.auth_dependencies import get_current_user
 
 from app.models.user import User
+from app.models.application import ApplicationStatus
 
 from app.schemas.application import (
-    CreateApplicationRequest,
+    ApplicationResponse,
+    ApplicationListResponse,
     UpdateApplicationStatusRequest,
-    ApplicationResponse
+    CreateApplicationRequest
 )
 
 from app.services.application_service import ApplicationService
@@ -47,17 +50,42 @@ def create_application(
 
 
 @router.get(
-    "/",
-    response_model=list[ApplicationResponse]
+    "/me",
+    response_model=ApplicationListResponse
 )
 def get_my_applications(
+    limit: int = Query(
+        default=20,
+        ge=1,
+        le=100
+    ),
+    cursor: str | None = Query(
+        default=None
+    ),
+    status: ApplicationStatus | None = Query(
+        default=None
+    ),
+    sort_by: str = Query(
+        default="created_at",
+        pattern="^(created_at|updated_at)$"
+    ),
+    sort_order: str = Query(
+        default="desc",
+        pattern="^(asc|desc)$"
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-        return ApplicationService.get_my_applications(
-            db=db,
-            current_user=current_user
-        )
+
+    return ApplicationService.get_my_applications(
+        db=db,
+        current_user=current_user,
+        limit=limit,
+        cursor=cursor,
+        status=status,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
 
 @router.get(
     "/{application_id}",
@@ -79,18 +107,43 @@ def get_application(
 
 @router.get(
     "/job/{job_id}",
-    response_model=list[ApplicationResponse]
+    response_model=ApplicationListResponse
 )
 def get_job_applications(
     job_id: UUID,
+    limit: int = Query(
+        default=20,
+        ge=1,
+        le=100
+    ),
+    cursor: str | None = Query(
+        default=None
+    ),
+    status: ApplicationStatus | None = Query(
+        default=None
+    ),
+    sort_by: str = Query(
+        default="created_at",
+        pattern="^(created_at|updated_at)$"
+    ),
+    sort_order: str = Query(
+        default="desc",
+        pattern="^(asc|desc)$"
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-        return ApplicationService.get_job_applications(
-            db=db,
-            job_id=job_id,
-            recruiter=current_user
-        )
+
+    return ApplicationService.get_job_applications(
+        db=db,
+        job_id=job_id,
+        recruiter=current_user,
+        limit=limit,
+        cursor=cursor,
+        status=status,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
 
 @router.patch(
     "/{application_id}/status",

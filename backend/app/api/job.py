@@ -2,7 +2,8 @@ from uuid import UUID
 
 from fastapi import (
     APIRouter,
-    Depends
+    Depends,
+    Query
 )
 from sqlalchemy.orm import Session
 
@@ -17,10 +18,12 @@ from app.models.user import User
 from app.schemas.jobs import (
     CreateJobRequest,
     UpdateJobRequest,
-    JobResponse
+    JobResponse,
+    JobListResponse
 )
 
 from app.services.job_service import JobService
+from backend.app.services import job_service
 
 
 router = APIRouter(
@@ -55,14 +58,46 @@ def create_job(
 # =====================================
 
 @router.get(
-    "/",
-    response_model=list[JobResponse]
+    "",
+    response_model=JobListResponse
 )
 def get_all_jobs(
+    search: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=100
+    ),
+
+    sort_by: str = Query(
+        default="created_at",
+        pattern="^(created_at|title|salary_min|salary_max)$"
+    ),
+
+    sort_order: str = Query(
+        default="desc",
+        pattern="^(asc|desc)$"
+    ),
+
+    limit: int = Query(
+        default=20,
+        ge=1,
+        le=100
+    ),
+
+    cursor: str | None = Query(
+        default=None
+    ),
+
     db: Session = Depends(get_db)
 ):
-    return JobService.get_all_jobs(db)
-
+    return job_service.get_all_jobs(
+        db=db,
+        limit=limit,
+        cursor=cursor,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
 
 # =====================================
 # GET JOB BY ID

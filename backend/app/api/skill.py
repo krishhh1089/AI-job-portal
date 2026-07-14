@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.dependencies.database import get_db
@@ -43,17 +43,40 @@ def create_skill(
 
 
 @router.get(
-    "/",
+    "",
     response_model=list[SkillResponse]
 )
 def get_all_skills(
-    skip: int = 0,
-    limit: int = 100,
+    search: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=100
+    ),
+
+    sort_by: str = Query(
+        default="name",
+        pattern="^(name|category|created_at)$"
+    ),
+
+    sort_order: str = Query(
+        default="asc",
+        pattern="^(asc|desc)$"
+    ),
+
+    limit: int = Query(
+        default=100,
+        ge=1,
+        le=500
+    ),
+
     db: Session = Depends(get_db)
 ):
+
     return skill_service.get_all_skills(
         db=db,
-        skip=skip,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
         limit=limit
     )
 

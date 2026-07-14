@@ -51,3 +51,8 @@ class AdminUpdateUserRequest(BaseModel):
 class UserListResponse(BaseModel):
     users: list[UserResponse]
     total: int
+
+class UserListResponse(BaseModel):
+    items: list[UserResponse]
+    next_cursor: str | None = None
+    has_next: bool
