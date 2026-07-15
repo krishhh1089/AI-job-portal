@@ -5,15 +5,7 @@ from fastapi import FastAPI
 from app.models.base import Base
 from app.db.session import engine
 
-from app.models import (
-    user,
-    company,
-    skill,
-    jobs,
-    job_skill,
-    resume,
-    application
-)
+
 
 from app.api import (
     auth,
@@ -28,7 +20,6 @@ from app.api import (
 from app.exceptions.handlers import register_exception_handlers
 
 
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="AI Job Portal"
